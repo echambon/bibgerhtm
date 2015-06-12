@@ -22,6 +22,7 @@
 #define PROJECT_TITLE_DFLT			"List of Publications"
 #define AUTHOR_NAME_DFLT			"John Smith"
 #define CATEGORIES_NB				7
+#define MAX_COAUTHORS				10 							// max co-authors for each paper
 
 // OUTPUT directory
 //#define OUTPUT_DIR 			"./OUTPUT/"

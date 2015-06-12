@@ -19,7 +19,7 @@ int bib_entries(char*);
 
 void html_write_header(FILE*, char*, char*);
 void html_write_footer(FILE*);
-void html_write_index(char*, bibentry*, int, int*, int*);
+void html_write_index(char*, bibentry*, int, int*, int*, char*);
 void html_write(FILE*, char*);
 
 static int compare_int_inc(void const*, void const*);
@@ -47,6 +47,7 @@ int main()
 	// Project variables
 	char project_title[MAXLENGTH];
 	char author_name[MAXLENGTH];
+	char author_name_article[MAXLENGTH]; char author_name_article2[MAXLENGTH];
 
 	// Parsing PROPERTIES.TXT
 	if(properties_file != NULL) {
@@ -57,6 +58,12 @@ int main()
 		// Read second line of properties file
 		fgets(file_reader, MAXLENGTH, properties_file);
 		sprintf(author_name, file_reader);
+
+		// Read third line
+		fgets(file_reader, MAXLENGTH, properties_file);
+		sprintf(author_name_article, file_reader);
+		sprintf(author_name_article2, file_reader);
+		strcat(author_name_article2," ");
 
 		// Message
 		printf("\n%s loaded successfully!\n", PROPERTIES_FILENAME);
@@ -136,6 +143,85 @@ int main()
 	// array_categories ordering
 	qsort(array_categories, j+1, sizeof(int), compare_int_inc);
 
+	// Available co-authors
+	char *array_coauthors = malloc(MAX_COAUTHORS*nb_entries*MAXLENGTH*sizeof(char));
+	char coauthors_initials[26];
+	for(i=0;i<26;i++) { coauthors_initials[i] = 0; }
+	char initial;
+	char entry_authors[MAXLENGTH];
+	char current_author[MAXLENGTH]; current_author[0] = '\0';
+	int coauthor_ispresent; int initial_ispresent;
+
+	for(i=0; i<nb_entries; i++) {
+		coauthor_ispresent = 0; initial_ispresent = 0;
+		strcpy(entry_authors, bib_entries[i].authors);
+
+		// Split along " "
+		char *token = strtok(entry_authors, " ");
+		if(token != NULL) {
+			do {
+				if(strcmp(token,"and") != 0) {
+					strcat(current_author, token);
+					strcat(current_author, " ");
+				} else {
+					// Detect if author is not the user
+					if((strcmp(current_author, author_name_article) != 0) && (strcmp(current_author, author_name_article2) != 0)) {
+						//printf("%s\n",current_author);
+
+						// Detect if author already present in database
+
+						// If not, add user
+
+						// Check if initial already in database and add if not
+						initial = current_author[0];
+						j = 0;
+						while((coauthors_initials[j] != 0) && j<26) {
+							if(coauthors_initials[j] == initial) {
+								initial_ispresent = 1;
+							}
+							j += 1;
+						}
+						if(!initial_ispresent) {
+							coauthors_initials[j] = initial;
+						}
+					}
+
+					current_author[0] = '\0';
+				}
+				token = strtok(NULL, " ");
+
+				// TODO
+				// Detect last author (or unique author)
+				if(token == NULL) {
+					if((strcmp(current_author, author_name_article) != 0) && (strcmp(current_author, author_name_article2) != 0)) {
+						//printf("%s\n",current_author);
+
+						// Detect if author already present in database
+
+						// If not, add user
+
+						// Check if initial already in database and add if not
+						initial = current_author[0];
+						j = 0;
+						while((coauthors_initials[j] != 0) && j<26) {
+							if(coauthors_initials[j] == initial) {
+								initial_ispresent = 1;
+							}
+							j += 1;
+						}
+						if(!initial_ispresent) {
+							coauthors_initials[j] = initial;
+						}
+					}
+
+					current_author[0] = '\0';
+				}
+			} while(token != NULL);
+		}
+
+		current_author[0] = '\0';
+	}
+
 	//// Creating empty CSS file
 	FILE* css_empty_file = NULL;
 	css_empty_file = fopen("OUTPUT/style.css", "w");
@@ -147,7 +233,7 @@ int main()
 	//char page_title[MAXLENGTH];
 
 	// Index page as OUTPUT/index.html
-	html_write_index(author_name, bib_entries, nb_entries, array_years, array_categories);
+	html_write_index(author_name, bib_entries, nb_entries, array_years, array_categories, coauthors_initials);
 
 	// Year pages
 
@@ -159,6 +245,7 @@ int main()
 	free(bib_entries);
 	free(array_years);
 	free(array_categories);
+	free(array_coauthors);
 
 	// Pausing and exiting
 	getchar();
@@ -192,7 +279,7 @@ void html_write(FILE* filename, char* content) {
 	fprintf(filename, "%s", content);
 }
 
-void html_write_index(char* author_name, bibentry* bib_entries, int nb_entries, int *array_years, int *array_categories) {
+void html_write_index(char* author_name, bibentry* bib_entries, int nb_entries, int *array_years, int *array_categories, char *coauthors_initials) {
 	FILE *html_page = NULL;
 	char page_title[MAXLENGTH];
 	char temp_str[MAXLENGTH];
@@ -265,6 +352,27 @@ void html_write_index(char* author_name, bibentry* bib_entries, int nb_entries, 
 
 	// H2 - Author
 	html_write(html_page,"\n\t\t<h2>Selection by author</h2>");
+
+	fputs("\n\t\t\t<table style=\"text-align:center\">\n\t\t\t\t<tr>", html_page);
+	int initial_ispresent = 0;
+	for(i=0;i<26;i++) {
+		initial_ispresent = 0;
+
+		//coauthors_initials
+		if(i==13) { fputs("\n\t\t\t\t<tr>", html_page); }
+		for(j=0;j<26;j++) {
+			if(coauthors_initials[j] == 65+i) {
+				initial_ispresent = 1;
+			}
+		}
+		if(initial_ispresent) {
+			fprintf(html_page, "\n\t\t\t\t\t<td><a href=\"#AUTH%c\">%c</a></td>", 65+i, 65+i);
+		} else {
+			fprintf(html_page, "\n\t\t\t\t\t<td>%c</td>", 65+i);
+		}
+		if(i==12) { fputs("\n\t\t\t\t</tr>", html_page); }
+	}
+	fputs("\n\t\t\t\t</tr>\n\t\t\t</table>", html_page);
 
 	// H2 - Keyword
 	html_write(html_page,"\n\t\t<h2>Selection by keyword</h2>");
@@ -356,6 +464,8 @@ void bib_parser(bibentry* bib_entries, int nb_entries, char* filename) {
 								char *end;
 								int value_year = strtol(value, &end, 10);
 								bib_entries[bib_counter].year = value_year;
+							} else if(strcmp(field,"author") == 0) {
+								strcpy(bib_entries[bib_counter].authors,value);
 							}
 						}
 

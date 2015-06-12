@@ -37,23 +37,23 @@ struct bibentry
 };
 
 
-//eprint : La spÃ©cification d'un publication Ã©lectronique.
-//howpublished : Comment il a Ã©tÃ© publiÃ©, si ce n'est pas avec une mÃ©thode standard.
-//institution : L'institution impliquÃ©e dans la publication (pas forcÃ©ment l'Ã©diteur).
-//journal : La revue ou le magazine dans lequel le travail a Ã©tÃ© publiÃ©.
-//key : Un champ cachÃ© utilisÃ© pour spÃ©cifier ou remplacer l'ordre alphabÃ©tique des entrÃ©es (quand "author et "editor" ne sont pas prÃ©sents).
-//month : Le mois de la crÃ©ation ou de la publication.
+//eprint : La spécification d'un publication électronique.
+//howpublished : Comment il a été publié, si ce n'est pas avec une méthode standard.
+//institution : L'institution impliquée dans la publication (pas forcément l'éditeur).
+//journal : La revue ou le magazine dans lequel le travail a été publié.
+//key : Un champ caché utilisé pour spécifier ou remplacer l'ordre alphabétique des entrées (quand "author et "editor" ne sont pas présents).
+//month : Le mois de la création ou de la publication.
 //note : Informations diverses.
-//number : Le numÃ©ro du journal ou du magazine.
-//organization : Le sponsor d'une confÃ©rence.
-//pages : Les numÃ©ros de pages, sÃ©parÃ©s par des virgules ou sous forme d'intervalles.
-//publisher : Le nom de la maison d'Ã©dition.
-//school : L'Ã©cole dans laquelle la thÃ¨se a Ã©tÃ© Ã©crite.
-//series : La collection dans laquelle la livre a Ã©tÃ© publiÃ©.
+//number : Le numéro du journal ou du magazine.
+//organization : Le sponsor d'une conférence.
+//pages : Les numéros de pages, séparés par des virgules ou sous forme d'intervalles.
+//publisher : Le nom de la maison d'édition.
+//school : L'école dans laquelle la thèse a été écrite.
+//series : La collection dans laquelle la livre a été publié.
 //title : Le titre du document.
 //type : Le type.
 //url : L'adresse URL.
-//volume : Le volume, dans le cas oÃ¹ il y a plusieurs volumes.
-//year : L'annÃ©e de publication (ou de crÃ©ation s'il n'a pas Ã©tÃ© publiÃ©).
+//volume : Le volume, dans le cas où il y a plusieurs volumes.
+//year : L'année de publication (ou de création s'il n'a pas été publié).
 
 #endif /* ENTRY_H_ */

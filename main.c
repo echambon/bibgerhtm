@@ -19,7 +19,7 @@ int bib_entries(char*);
 
 void html_write_header(FILE*, char*, char*);
 void html_write_footer(FILE*);
-void html_write_index(char*, bibentry*, int, int*, int*, char*);
+void html_write_index(char*, bibentry*, int, int*, int*, char*, char**);
 void html_write(FILE*, char*);
 
 static int compare_int_inc(void const*, void const*);
@@ -31,7 +31,7 @@ static int compare_int_dec(void const*, void const*);
 int main()
 {
 	// Counters
-	int i,j;
+	int i,j,k;
 
 	// Welcome message
 	printf("bibgerhtm V%d\n###############################\n",VERSION);
@@ -144,14 +144,19 @@ int main()
 	qsort(array_categories, j+1, sizeof(int), compare_int_inc);
 
 	// Available co-authors
-	char *array_coauthors = malloc(MAX_COAUTHORS*nb_entries*MAXLENGTH*sizeof(char));
+	char **array_coauthors = malloc(MAX_COAUTHORS*nb_entries*sizeof(char*));
 	char coauthors_initials[26];
+
+	// Initialize arrays
 	for(i=0;i<26;i++) { coauthors_initials[i] = 0; }
+	for(i=0;i<MAX_COAUTHORS*nb_entries;i++) { array_coauthors[i] = malloc(MAXLENGTH*sizeof(char)); array_coauthors[i][0] = '\0'; }
+
 	char initial;
 	char entry_authors[MAXLENGTH];
 	char current_author[MAXLENGTH]; current_author[0] = '\0';
 	int coauthor_ispresent; int initial_ispresent;
 
+	// PROBLEM WITH FIRST AUTHOR SOMETIMES ?
 	for(i=0; i<nb_entries; i++) {
 		coauthor_ispresent = 0; initial_ispresent = 0;
 		strcpy(entry_authors, bib_entries[i].authors);
@@ -166,11 +171,21 @@ int main()
 				} else {
 					// Detect if author is not the user
 					if((strcmp(current_author, author_name_article) != 0) && (strcmp(current_author, author_name_article2) != 0)) {
-						//printf("%s\n",current_author);
-
-						// Detect if author already present in database
+						// Detect if author already present in database (array_coauthors)
+						for(j=0;j<MAX_COAUTHORS*nb_entries;j++) {
+							if(strcmp(current_author, array_coauthors[j]) == 0) {
+								coauthor_ispresent = 1;
+							}
+						}
 
 						// If not, add user
+						if(!coauthor_ispresent) {
+							k = 0;
+							while(array_coauthors[k][0] != '\0') {
+								k += 1;
+							}
+							strcpy(array_coauthors[k],current_author);
+						}
 
 						// Check if initial already in database and add if not
 						initial = current_author[0];
@@ -190,15 +205,24 @@ int main()
 				}
 				token = strtok(NULL, " ");
 
-				// TODO
 				// Detect last author (or unique author)
+				coauthor_ispresent = 0;
 				if(token == NULL) {
 					if((strcmp(current_author, author_name_article) != 0) && (strcmp(current_author, author_name_article2) != 0)) {
-						//printf("%s\n",current_author);
-
-						// Detect if author already present in database
+						// Detect if author already present in database (array_coauthors)
+						for(j=0;j<MAX_COAUTHORS*nb_entries;j++) {
+							if(strcmp(current_author, array_coauthors[j]) == 0) {
+								coauthor_ispresent = 1;
+							}
+						}
 
 						// If not, add user
+						if(!coauthor_ispresent) {k = 0;
+							while(array_coauthors[k][0] != '\0') {
+							k += 1;
+							}
+							strcpy(array_coauthors[k],current_author);
+						}
 
 						// Check if initial already in database and add if not
 						initial = current_author[0];
@@ -233,7 +257,7 @@ int main()
 	//char page_title[MAXLENGTH];
 
 	// Index page as OUTPUT/index.html
-	html_write_index(author_name, bib_entries, nb_entries, array_years, array_categories, coauthors_initials);
+	html_write_index(author_name, bib_entries, nb_entries, array_years, array_categories, coauthors_initials, array_coauthors);
 
 	// Year pages
 
@@ -245,6 +269,7 @@ int main()
 	free(bib_entries);
 	free(array_years);
 	free(array_categories);
+	for(i=0;i<MAX_COAUTHORS*nb_entries;i++) { free(array_coauthors[i]); }
 	free(array_coauthors);
 
 	// Pausing and exiting
@@ -279,13 +304,13 @@ void html_write(FILE* filename, char* content) {
 	fprintf(filename, "%s", content);
 }
 
-void html_write_index(char* author_name, bibentry* bib_entries, int nb_entries, int *array_years, int *array_categories, char *coauthors_initials) {
+void html_write_index(char* author_name, bibentry* bib_entries, int nb_entries, int *array_years, int *array_categories, char *coauthors_initials, char **array_coauthors) {
 	FILE *html_page = NULL;
 	char page_title[MAXLENGTH];
 	char temp_str[MAXLENGTH];
 
 	// Counters
-	int i,j;
+	int i,j,k;
 
 	// Creating index page
 	html_page = fopen("OUTPUT/index.html", "w");
@@ -350,9 +375,10 @@ void html_write_index(char* author_name, bibentry* bib_entries, int nb_entries, 
 	}
 	fputs("\n\t\t\t\t</tr>\n\t\t\t</table>", html_page);
 
-	// H2 - Author
+	// H2 - Authors list
 	html_write(html_page,"\n\t\t<h2>Selection by author</h2>");
 
+	// initials
 	fputs("\n\t\t\t<table style=\"text-align:center\">\n\t\t\t\t<tr>", html_page);
 	int initial_ispresent = 0;
 	for(i=0;i<26;i++) {
@@ -372,6 +398,35 @@ void html_write_index(char* author_name, bibentry* bib_entries, int nb_entries, 
 		}
 		if(i==12) { fputs("\n\t\t\t\t</tr>", html_page); }
 	}
+	fputs("\n\t\t\t\t</tr>\n\t\t\t</table><br/>", html_page);
+
+	// authors list
+	fprintf(html_page, "\n\t\t\t<table style=\"width:%dpx\">\n\t\t\t\t<tr>", AUTHORS_COLUMN_WIDTH_PX*3+10); // style=\"text-align:center\"
+
+	// TODO add links to authors pages
+	// For each initial in char* coauthors_initials, find authors will this initial in char** array_coauthors
+	for(i=0;i<26;i++) {
+		// If there is actually something stored in the array ...
+		if(coauthors_initials[i] != 0) {
+			fprintf(html_page, "\n\t\t\t\t\t<td width=\"10%%\"><a href=\"#AUTH%c\"></a>%c</td>", coauthors_initials[i], coauthors_initials[i]);
+
+			// Look for authors with the same initial in array_coauthors
+			k = 0;
+			for(j=0;j<MAX_COAUTHORS*nb_entries;j++) {
+				if(array_coauthors[j][0] == coauthors_initials[i]) {
+					fprintf(html_page, "\n\t\t\t\t\t<td>%s</td>", array_coauthors[j]);
+					k += 1;
+					if(k == 2) {
+						fputs("\n\t\t\t\t</tr>\n\t\t\t\t<tr>", html_page);
+						k = 0;
+					}
+				}
+			}
+
+			fputs("\n\t\t\t\t</tr>\n\t\t\t\t<tr>", html_page);
+		}
+	}
+
 	fputs("\n\t\t\t\t</tr>\n\t\t\t</table>", html_page);
 
 	// H2 - Keyword

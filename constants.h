@@ -9,7 +9,7 @@
 #define CONSTANTS_H_
 
 // Program version
-#define VERSION 1
+#define VERSION 20150618
 
 // Max strings length
 #define MAXLENGTH 255
@@ -34,7 +34,7 @@
 #define CATEGORY_COLUMN_WIDTH_PX	190
 #define CATEGORY_COLUMNS			3
 
-#define AUTHORS_COLUMN_WIDTH_PX		80
+#define AUTHORS_COLUMN_WIDTH_PX		120
 #define AUTHORS_COLUMNS				3
 
 #endif /* CONSTANTS_H_ */

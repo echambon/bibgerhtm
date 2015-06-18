@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <ctype.h>
 
 #include "constants.h"
 #include "entry.h"
@@ -24,6 +25,9 @@ void html_write(FILE*, char*);
 
 static int compare_int_inc(void const*, void const*);
 static int compare_int_dec(void const*, void const*);
+static int compare_str(void const*, void const*);
+
+void str_toupper(char*);
 
 //TODO create folders (output+subdirectories)
 //TODO use tables to organize content
@@ -34,7 +38,7 @@ int main()
 	int i,j,k;
 
 	// Welcome message
-	printf("bibgerhtm V%d\n###############################\n",VERSION);
+	printf("bibgerhtm build-%d\n#######################################\n",VERSION);
 
 	// Loading project files
 	printf("Loading project files...\n");
@@ -83,6 +87,9 @@ int main()
 
 	// Writing number of counted entries
 	printf("%d entries detected in %s\n", nb_entries, INPUT_FILENAME);
+
+	// TODO BUG ???? je n'ai rien changé mais ça bug maintenant ????
+	// Faire un malloc sur un bibentry** ?? sur le modèle de array_coauthors ?
 
 	// Initializing array of struct
 	//printf("%d\n", sizeof(bibentry));
@@ -246,6 +253,12 @@ int main()
 		current_author[0] = '\0';
 	}
 
+	// coauthors_initials ordering
+	qsort(coauthors_initials, 26, sizeof(char), compare_int_inc);
+
+	// array_coauthors ordering
+	qsort(array_coauthors, MAX_COAUTHORS*nb_entries, sizeof(char*), compare_str);
+
 	//// Creating empty CSS file
 	FILE* css_empty_file = NULL;
 	css_empty_file = fopen("OUTPUT/style.css", "w");
@@ -265,6 +278,9 @@ int main()
 
 	// Debugging
 
+	// End message
+	printf("HTML pages generation is successful!\n");
+
 	// Freeing memory
 	free(bib_entries);
 	free(array_years);
@@ -281,7 +297,7 @@ int main()
 void html_write_header(FILE* filename, char* title, char* author_name) {
 	fputs("<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n\t<meta charset=\"utf-8\">\n", filename);
 	fprintf(filename, "\t<meta name=\"keywords\" lang=\"en\" content=\"bibgerhtm, bibliography, article, report, %s\">\n", author_name);
-	fprintf(filename, "\t<meta name=\"generator\" content=\"bibgerhtm v%d\">", VERSION);
+	fprintf(filename, "\t<meta name=\"generator\" content=\"bibgerhtm b%d\">", VERSION);
 	fputs("\n\t<link href=\"style.css\" rel=\"stylesheet\" type=\"text/css\">\n", filename);
 	//<META name="GENERATOR" content="bibtex2html 1.01">
 	fprintf(filename, "\t<title>%s</title>\n", title);
@@ -297,7 +313,7 @@ void html_write_footer(FILE* filename) {
 
 	fputs("\n\t</center>\n\t<br/><br/>\n\t<hr>\n\tLast updated: ",filename);
 	fprintf(filename, "<i>%02d/%02d/%d - %02d:%02d</i>\n", instant.tm_year+1900, instant.tm_mon+1, instant.tm_mday, instant.tm_hour, instant.tm_min);
-	fputs("\t<hr>\n\tGenerated from BibT<sub>E</sub>X by <a href=\"http://echambon.contact.free.fr/en/misc.php\" target=\"blank\"><em>bibgerhtm</em></a>, itself inspired by <a href=\"http://www-sop.inria.fr/epidaure/personnel/malandain/codes/bibtex2html.html\" target=\"blank\"><em>bibtex2html</em></a>.\n</body>\n</html>", filename);
+	fputs("\t<hr>\n\tGenerated from BibT<sub>E</sub>X by <a href=\"http://echambon.contact.free.fr/en/bibgerhtm.php\" target=\"blank\"><em>bibgerhtm</em></a>, itself inspired by <a href=\"http://www-sop.inria.fr/epidaure/personnel/malandain/codes/bibtex2html.html\" target=\"blank\"><em>bibtex2html</em></a>.\n</body>\n</html>", filename);
 }
 
 void html_write(FILE* filename, char* content) {
@@ -308,9 +324,11 @@ void html_write_index(char* author_name, bibentry* bib_entries, int nb_entries, 
 	FILE *html_page = NULL;
 	char page_title[MAXLENGTH];
 	char temp_str[MAXLENGTH];
+	char *token;
+	char firstname[MAXLENGTH], upcase_surname[MAXLENGTH], surname[MAXLENGTH], firstname_initials[MAXLENGTH];
 
 	// Counters
-	int i,j,k;
+	int i,j,k,l;
 
 	// Creating index page
 	html_page = fopen("OUTPUT/index.html", "w");
@@ -414,10 +432,41 @@ void html_write_index(char* author_name, bibentry* bib_entries, int nb_entries, 
 			k = 0;
 			for(j=0;j<MAX_COAUTHORS*nb_entries;j++) {
 				if(array_coauthors[j][0] == coauthors_initials[i]) {
-					fprintf(html_page, "\n\t\t\t\t\t<td>%s</td>", array_coauthors[j]);
+					// Initializations
+					firstname[0] = '\0';
+					strcpy(surname, "");
+					strcpy(firstname_initials,"");
+					l = 0;
+
+					// Getting surname!
+					token = strtok(array_coauthors[j],",");
+					strcpy(surname, token);
+
+					// Getting surname!
+					token = strtok(NULL,". ");
+					while(token != NULL) {
+						firstname_initials[l] = token[0]; l += 1;
+						strcat(firstname, token);
+						strcat(firstname, ". ");
+						token = strtok(NULL,". ");
+					}
+
+					// Upper-case surname
+					strcpy(upcase_surname,surname);
+					str_toupper(upcase_surname);
+
+					// TODO big problem with initials in page address
+					// First name (initials to appear in the link)
+					char *upcase_firstname = (char*)malloc((l-1)*sizeof(char));
+					strncpy(upcase_firstname,firstname_initials,l);
+
+					fprintf(html_page, "\n\t\t\t\t\t<td width=\"30%%\"><a href=\"%s-%s.html\"><b>%s</b>, %s</a></td>", upcase_surname, upcase_firstname, surname, firstname);
+
+					free(upcase_firstname);
+
 					k += 1;
-					if(k == 2) {
-						fputs("\n\t\t\t\t</tr>\n\t\t\t\t<tr>", html_page);
+					if(k == 3) {
+						fputs("\n\t\t\t\t</tr>\n\t\t\t\t<tr>\n\t\t\t\t\t<td></td>", html_page);
 						k = 0;
 					}
 				}
@@ -555,4 +604,18 @@ static int compare_int_dec(void const *a, void const *b) {
 
    /* evaluer et retourner l'etat de l'evaluation (tri croissant) */
    return *pb - *pa;
+}
+
+static int compare_str(void const *a, void const *b) {
+    const char **ia = (const char **)a;
+    const char **ib = (const char **)b;
+    return strcmp(*ia, *ib);
+}
+
+void str_toupper(char* input) {
+	int i = 0;
+	while(input[i]) {
+		input[i] = toupper(input[i]);
+		i++;
+	}
 }

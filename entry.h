@@ -22,6 +22,7 @@ struct bibentry
 	int 	chapter;					// chapter number
 	int		edition;					// book's edition
 	char	editor[MAXLENGTH];			// editor
+	char 	keywords[2*MAXLENGTH];		// keywords
 
 	int		year;
 

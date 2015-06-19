@@ -455,10 +455,10 @@ void html_write_index(char* author_name, bibentry* bib_entries, int nb_entries, 
 					strcpy(upcase_surname,surname);
 					str_toupper(upcase_surname);
 
-					// TODO big problem with initials in page address
 					// First name (initials to appear in the link)
-					char *upcase_firstname = (char*)malloc((l-1)*sizeof(char));
+					char *upcase_firstname = (char*)malloc(l*sizeof(char));
 					strncpy(upcase_firstname,firstname_initials,l);
+					upcase_firstname[l] = '\0';
 
 					fprintf(html_page, "\n\t\t\t\t\t<td width=\"30%%\"><a href=\"%s-%s.html\"><b>%s</b>, %s</a></td>", upcase_surname, upcase_firstname, surname, firstname);
 

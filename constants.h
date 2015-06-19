@@ -9,7 +9,7 @@
 #define CONSTANTS_H_
 
 // Program version
-#define VERSION 20150618
+#define VERSION 20150619
 
 // Max strings length
 #define MAXLENGTH 255

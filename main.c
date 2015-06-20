@@ -23,6 +23,7 @@ void html_write_footer(FILE*);
 void html_write_index(char*, bibentry*, int, int*, int*, char*, char**);
 void html_write_year_page(int, int, bibentry*, char*);
 void html_write(FILE*, char*);
+void html_write_entry(FILE*, bibentry);
 
 int compare_int_inc(void const*, void const*);
 int compare_int_dec(void const*, void const*);
@@ -33,7 +34,6 @@ void str_toupper(char*);
 char* get_category_str(int);
 
 //TODO create folders (output+subdirectories)
-//TODO use tables to organize content
 
 int main()
 {
@@ -92,9 +92,6 @@ int main()
 
 	// Writing number of counted entries
 	printf("%d entries detected in %s\n", nb_entries, INPUT_FILENAME);
-
-	// TODO BUG ???? je n'ai rien changé mais ça bug maintenant ????
-	// Faire un malloc sur un bibentry** ?? sur le modèle de array_coauthors ?
 
 	// Initializing array of struct
 	//printf("%d\n", sizeof(bibentry));
@@ -437,7 +434,7 @@ void html_write_index(char* author_name, bibentry* bib_entries, int nb_entries, 
 	for(i=0;i<26;i++) {
 		// If there is actually something stored in the array ...
 		if(coauthors_initials[i] != 0) {
-			fprintf(html_page, "\n\t\t\t\t\t<td width=\"10%%\"><a href=\"#AUTH%c\"></a>%c</td>", coauthors_initials[i], coauthors_initials[i]);
+			fprintf(html_page, "\n\t\t\t\t\t<td width=\"10%%\"><a name=\"#AUTH%c\"></a>%c</td>", coauthors_initials[i], coauthors_initials[i]);
 
 			// Look for authors with the same initial in array_coauthors
 			k = 0;
@@ -511,7 +508,6 @@ void html_write_year_page(int year, int nb_entries, bibentry* bib_entries, char 
 	char filename[MAXLENGTH];
 	char page_title[MAXLENGTH];
 	char temp_str[MAXLENGTH];
-	bibentry* bib_entries_this_year = malloc(nb_entries*sizeof(bibentry));
 	int i,j;
 	int categories_this_year[CATEGORIES_NB] = {0,0,0,0,0,0,0};
 
@@ -522,7 +518,6 @@ void html_write_year_page(int year, int nb_entries, bibentry* bib_entries, char 
 	html_page = fopen(filename, "w");
 
 	// Titling page
-	// TODO check with Sontag website
 	sprintf(page_title, "Publications by %s in year %d", author_name, year);
 
 	// Writing header
@@ -534,20 +529,14 @@ void html_write_year_page(int year, int nb_entries, bibentry* bib_entries, char 
 
 	// Body
 	//// H1
-	sprintf(temp_str, "\n\t\t<h1>%s</h1>", page_title); //\n\t\t<h2>Year %d</h2> year
+	sprintf(temp_str, "\n\t\t<h1>%s</h1>", page_title);
 	html_write(html_page, temp_str);
 
 	// detect entries corresponding to this year
-	j = 0;
 	for(i=0;i<nb_entries;i++) {
 		if(bib_entries[i].year == year) {
-			//bib_entries_this_year[]
-			memcpy(&bib_entries_this_year[j], &bib_entries[i], sizeof(bibentry));
-
-			// also store available categories
-			categories_this_year[bib_entries_this_year[j].category-1] = 1;
-
-			j += 1;
+			// store available categories
+			categories_this_year[bib_entries[i].category-1] = 1;
 		}
 	}
 
@@ -558,6 +547,20 @@ void html_write_year_page(int year, int nb_entries, bibentry* bib_entries, char 
 			char *category_name = get_category_str(i+1);
 			sprintf(temp_str, "\n\t\t<h2>%s</h2>", category_name);
 			html_write(html_page, temp_str);
+
+			// starting an ordered list
+			fputs("\n\t\t\t</center><ol>", html_page);
+
+			for(j=0;j<nb_entries;j++) {
+				if((bib_entries[j].category == i+1) && (bib_entries[j].year == year)) {
+					fputs("\n\t\t\t\t<li>\n\t\t\t\t\t", html_page);
+					html_write_entry(html_page, bib_entries[j]);
+					fputs("\n\t\t\t\t</li>", html_page);
+				}
+			}
+
+			// end of the ordered list
+			fputs("\n\t\t\t</ol><center>", html_page);
 		}
 	}
 
@@ -571,10 +574,37 @@ void html_write_year_page(int year, int nb_entries, bibentry* bib_entries, char 
 	// Closing file
 	fclose(html_page);
 
-	// Freeing allocated variables
-	free(bib_entries_this_year);
-
 	printf("[X] %d.html\n", year);
+}
+
+void html_write_entry(FILE* html_page, bibentry entry) {
+	// TODO manage author's names
+	if(entry.category == 3) {
+		fprintf(html_page, "%s. <b>%s</b>. ", entry.authors, entry.title);
+		if(strcmp(entry.editor, "") != 0) {
+			// TODO
+			fprintf(html_page, "In %s, ", entry.editor);
+		} else {
+			fprintf(html_page, "<i>%s</i>, %d(%d):%s, ", entry.journal, 1, 1, entry.pages);
+		}
+		fprintf(html_page, "%d. [PDF] ", entry.year);
+
+		if(strcmp(entry.keywords, "") != 0) {
+			fprintf(html_page, "Keyword(s): %s. ", entry.keywords);
+		}
+
+		// print note, if any:
+		if(strcmp(entry.note, "") != 0) {
+			fprintf(html_page, "<i>Note</i>: %s. ", entry.note);
+		}
+
+		// abstract
+		if(strcmp(entry.abstract, "") != 0) {
+			fprintf(html_page, "<center>Abstract:<table border=\"1\"><tr><td>%s</td></tr></table></center>", entry.abstract);
+		}
+	} else {
+		fprintf(html_page, "(UNDER WORK) %s, %d", entry.title, entry.year);
+	}
 }
 
 int bib_entries(char* filename) {
@@ -598,7 +628,7 @@ int bib_entries(char* filename) {
 void bib_parser(bibentry* bib_entries, int nb_entries, char* filename) {
 	int bib_counter = -1;
 	//int opened = 0;
-	char cur_line[5*MAXLENGTH];
+	char cur_line[20*MAXLENGTH];
 	FILE* bib_file = NULL; bib_file = fopen(filename, "r");
 	//bibentry* bib_entries = malloc(nb_entries*sizeof(bibentry));
 
@@ -629,7 +659,6 @@ void bib_parser(bibentry* bib_entries, int nb_entries, char* filename) {
 				}
 			} else {
 				// Split string along "=", then "{" and "}"
-				// http://en.cppreference.com/w/c/string/byte/strtok
 				char *token = strtok(cur_line, "= {}\t\n");
 
 				if(token) {
@@ -640,19 +669,40 @@ void bib_parser(bibentry* bib_entries, int nb_entries, char* filename) {
 					// Getting value
 					token = strtok(NULL, "=\n");
 					if(token) {
+						//TODO problem with token and abstract, the whole abstract is not obtained...
 						char *value = malloc(sizeof(char)*strlen(token));
 
 						sscanf(token," {%[0-9a-zA-Z,.- ]},",value);
 						if(value != NULL && field != NULL) {
-							//printf("|%s|%s|\n",field,value);
-
 							// Fill fields (that's hard to say!)
-							if(strcmp(field,"year") == 0) {
+							if(strcmp(field,"year") == 0) { // YEAR
 								char *end;
 								int value_year = strtol(value, &end, 10);
 								bib_entries[bib_counter].year = value_year;
-							} else if(strcmp(field,"author") == 0) {
+							} else if(strcmp(field,"author") == 0) { // AUTHOR
 								strcpy(bib_entries[bib_counter].authors,value);
+							} else if(strcmp(field,"title") == 0) { // TITLE
+								strcpy(bib_entries[bib_counter].title,value);
+							} else if(strcmp(field,"abstract") == 0) { // ABSTRACT
+								strcpy(bib_entries[bib_counter].abstract,value);
+							} else if(strcmp(field,"keywords") == 0) { // KEYWORDS
+								strcpy(bib_entries[bib_counter].keywords,value);
+							} else if(strcmp(field,"booktitle") == 0) { // BOOKTITLE
+								strcpy(bib_entries[bib_counter].booktitle,value);
+							} else if(strcmp(field,"pages") == 0) { // PAGES
+								strcpy(bib_entries[bib_counter].pages,value);
+							} else if(strcmp(field,"journal") == 0) { // JOURNAL
+								strcpy(bib_entries[bib_counter].journal,value);
+							} else if(strcmp(field,"note") == 0) { // NOTE
+								strcpy(bib_entries[bib_counter].note,value);
+							} else if(strcmp(field,"volume") == 0) { // VOLUME
+								char *end;
+								int value_volume = strtol(value, &end, 10);
+								bib_entries[bib_counter].volume = value_volume;
+							} else if(strcmp(field,"number") == 0) { // NUMBER
+								char *end;
+								int value_number = strtol(value, &end, 10);
+								bib_entries[bib_counter].number = value_number;
 							}
 						}
 
@@ -666,7 +716,6 @@ void bib_parser(bibentry* bib_entries, int nb_entries, char* filename) {
 	}
 
 	fclose(bib_file);
-	//return bib_entries;
 }
 
 int compare_int_inc(void const *a, void const *b) {

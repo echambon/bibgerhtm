@@ -15,16 +15,27 @@ typedef struct bibentry bibentry;
 struct bibentry
 {
 	char 	address[MAXLENGTH];			// editor's address
-	char 	abstract[5*MAXLENGTH];		// article's abstract
 	char 	annote[MAXLENGTH];			// annotation
-	char 	authors[MAXLENGTH];			// authors names
-	char 	booktitle[MAXLENGTH]; 		// book's title
 	int 	chapter;					// chapter number
 	int		edition;					// book's edition
 	char	editor[MAXLENGTH];			// editor
-	char 	keywords[2*MAXLENGTH];		// keywords
+	char	month[MAXLENGTH];			// 3 letters month identifier
+	char 	publisher[MAXLENGTH];
+	char 	school[MAXLENGTH];			// (for thesis)
+	char 	series[MAXLENGTH];
+	char 	url[5*MAXLENGTH];			// document's path on computer?
 
 	int		year;
+	char 	authors[MAXLENGTH];			// authors names
+	char 	title[4*MAXLENGTH];
+	char 	keywords[2*MAXLENGTH];		// keywords
+	char 	abstract[20*MAXLENGTH];		// article's abstract
+	char 	pages[MAXLENGTH];			//
+	char 	booktitle[MAXLENGTH]; 		// book's title
+	char 	journal[MAXLENGTH];			//
+	char 	note[5*MAXLENGTH];			// various information
+	int 	volume;
+	int 	number;						// journal number
 
 	int 	category;
 	// 7 categories:
@@ -37,24 +48,12 @@ struct bibentry
 	// 7 - Miscellaneous (@mastersthesis, @audiovisual, @film, @misc, @unpublished)
 };
 
-
+// NOT IMPLEMENTED:
 //eprint : La spécification d'un publication électronique.
 //howpublished : Comment il a été publié, si ce n'est pas avec une méthode standard.
 //institution : L'institution impliquée dans la publication (pas forcément l'éditeur).
-//journal : La revue ou le magazine dans lequel le travail a été publié.
 //key : Un champ caché utilisé pour spécifier ou remplacer l'ordre alphabétique des entrées (quand "author et "editor" ne sont pas présents).
-//month : Le mois de la création ou de la publication.
-//note : Informations diverses.
-//number : Le numéro du journal ou du magazine.
 //organization : Le sponsor d'une conférence.
-//pages : Les numéros de pages, séparés par des virgules ou sous forme d'intervalles.
-//publisher : Le nom de la maison d'édition.
-//school : L'école dans laquelle la thèse a été écrite.
-//series : La collection dans laquelle la livre a été publié.
-//title : Le titre du document.
 //type : Le type.
-//url : L'adresse URL.
-//volume : Le volume, dans le cas où il y a plusieurs volumes.
-//year : L'année de publication (ou de création s'il n'a pas été publié).
 
 #endif /* ENTRY_H_ */

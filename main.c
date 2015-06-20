@@ -24,9 +24,10 @@ void html_write_index(char*, bibentry*, int, int*, int*, char*, char**);
 void html_write_year_page(int, int, bibentry*, char*);
 void html_write(FILE*, char*);
 
-static int compare_int_inc(void const*, void const*);
-static int compare_int_dec(void const*, void const*);
-static int compare_str(void const*, void const*);
+int compare_int_inc(void const*, void const*);
+int compare_int_dec(void const*, void const*);
+int compare_str(void const*, void const*);
+int compare_char( const void*, const void*);
 
 void str_toupper(char*);
 char* get_category_str(int);
@@ -217,7 +218,7 @@ int main()
 				token = strtok(NULL, " ");
 
 				// Detect last author (or unique author)
-				coauthor_ispresent = 0;
+				coauthor_ispresent = 0; initial_ispresent = 0;
 				if(token == NULL) {
 					if((strcmp(current_author, author_name_article) != 0) && (strcmp(current_author, author_name_article2) != 0)) {
 						// Detect if author already present in database (array_coauthors)
@@ -228,9 +229,10 @@ int main()
 						}
 
 						// If not, add user
-						if(!coauthor_ispresent) {k = 0;
+						if(!coauthor_ispresent) {
+							k = 0;
 							while(array_coauthors[k][0] != '\0') {
-							k += 1;
+								k += 1;
 							}
 							strcpy(array_coauthors[k],current_author);
 						}
@@ -257,8 +259,7 @@ int main()
 	}
 
 	// coauthors_initials ordering
-	// TODO problem with ordering, A is last ...
-	qsort(coauthors_initials, 26, sizeof(char), compare_int_inc);
+	qsort(coauthors_initials, 26, sizeof(char), compare_char);
 
 	// array_coauthors ordering
 	qsort(array_coauthors, MAX_COAUTHORS*nb_entries, sizeof(char*), compare_str);
@@ -668,24 +669,28 @@ void bib_parser(bibentry* bib_entries, int nb_entries, char* filename) {
 	//return bib_entries;
 }
 
-static int compare_int_inc(void const *a, void const *b) {
+int compare_int_inc(void const *a, void const *b) {
    int const *pa = a;
    int const *pb = b;
 
    return *pa - *pb;
 }
 
-static int compare_int_dec(void const *a, void const *b) {
+int compare_int_dec(void const *a, void const *b) {
    int const *pa = a;
    int const *pb = b;
 
    return *pb - *pa;
 }
 
-static int compare_str(void const *a, void const *b) {
+int compare_str(void const *a, void const *b) {
     const char **ia = (const char **)a;
     const char **ib = (const char **)b;
     return strcmp(*ia, *ib);
+}
+
+int compare_char( const void *a, const void *b) {
+	return *(char*)a - *(char*)b;
 }
 
 void str_toupper(char* input) {

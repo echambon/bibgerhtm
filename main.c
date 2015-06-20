@@ -21,6 +21,7 @@ int bib_entries(char*);
 void html_write_header(FILE*, char*, char*);
 void html_write_footer(FILE*);
 void html_write_index(char*, bibentry*, int, int*, int*, char*, char**);
+void html_write_year_page(int, int, bibentry*, char*);
 void html_write(FILE*, char*);
 
 static int compare_int_inc(void const*, void const*);
@@ -28,6 +29,7 @@ static int compare_int_dec(void const*, void const*);
 static int compare_str(void const*, void const*);
 
 void str_toupper(char*);
+char* get_category_str(int);
 
 //TODO create folders (output+subdirectories)
 //TODO use tables to organize content
@@ -57,11 +59,13 @@ int main()
 	if(properties_file != NULL) {
 		// Read first line of properties file
 		fgets(file_reader, MAXLENGTH, properties_file);
-		sprintf(project_title, file_reader); // it seems a \n is added at the end?
+		sprintf(project_title, file_reader);
 
 		// Read second line of properties file
 		fgets(file_reader, MAXLENGTH, properties_file);
 		sprintf(author_name, file_reader);
+		char *author_name_noline = strtok(author_name,"\n");
+		strcpy(author_name, author_name_noline);
 
 		// Read third line
 		fgets(file_reader, MAXLENGTH, properties_file);
@@ -249,11 +253,11 @@ int main()
 				}
 			} while(token != NULL);
 		}
-
 		current_author[0] = '\0';
 	}
 
 	// coauthors_initials ordering
+	// TODO problem with ordering, A is last ...
 	qsort(coauthors_initials, 26, sizeof(char), compare_int_inc);
 
 	// array_coauthors ordering
@@ -272,7 +276,12 @@ int main()
 	// Index page as OUTPUT/index.html
 	html_write_index(author_name, bib_entries, nb_entries, array_years, array_categories, coauthors_initials, array_coauthors);
 
-	// Year pages
+	// Year pages (array_years) in OUTPUT/year/
+	for(i=0;i<nb_entries;i++) {
+		if(array_years[i] != 0) {
+			html_write_year_page(array_years[i], nb_entries, bib_entries, author_name);
+		}
+	}
 
 	// Copying INPUT.BIB to OUTPUT/biblio/complete-bibliography.bib
 
@@ -311,7 +320,9 @@ void html_write_footer(FILE* filename) {
 	time(&secondes);
 	instant=*localtime(&secondes);
 
-	fputs("\n\t</center>\n\t<br/><br/>\n\t<hr>\n\tLast updated: ",filename);
+	fputs("\n\t</center>\n\t<hr>\n\t<u><b>Disclaimer:</b></u>",filename);
+	fputs("\n\t<br/><br/><i>This material is presented to ensure timely dissemination of scholarly and technical work. Copyright and all rights therein are retained by authors or by other copyright holders.</i>",filename);
+	fputs("\n\t<hr>\n\tLast updated: ",filename);
 	fprintf(filename, "<i>%02d/%02d/%d - %02d:%02d</i>\n", instant.tm_year+1900, instant.tm_mon+1, instant.tm_mday, instant.tm_hour, instant.tm_min);
 	fputs("\t<hr>\n\tGenerated from BibT<sub>E</sub>X by <a href=\"http://echambon.contact.free.fr/en/bibgerhtm.php\" target=\"blank\"><em>bibgerhtm</em></a>, itself inspired by <a href=\"http://www-sop.inria.fr/epidaure/personnel/malandain/codes/bibtex2html.html\" target=\"blank\"><em>bibtex2html</em></a>.\n</body>\n</html>", filename);
 }
@@ -421,7 +432,6 @@ void html_write_index(char* author_name, bibentry* bib_entries, int nb_entries, 
 	// authors list
 	fprintf(html_page, "\n\t\t\t<table style=\"width:%dpx\">\n\t\t\t\t<tr>", AUTHORS_COLUMN_WIDTH_PX*3+10); // style=\"text-align:center\"
 
-	// TODO add links to authors pages
 	// For each initial in char* coauthors_initials, find authors will this initial in char** array_coauthors
 	for(i=0;i<26;i++) {
 		// If there is actually something stored in the array ...
@@ -483,6 +493,7 @@ void html_write_index(char* author_name, bibentry* bib_entries, int nb_entries, 
 
 	// H2 - Bibliography
 	html_write(html_page,"\n\t\t<h2>Complete bibliography</h2>\n\t\t\t<a href=\"biblio/complete-bibliography.html\">Complete bibliography as a single HTML page</a>\n\t\t\t<br/><a href=\"biblio/complete-bibliography.bib\">Complete bibliography as a single BIBTEX file</a>");
+	fputs("\n\t\t\t<br/><br/>",html_page);
 
 	// Footer
 	html_write_footer(html_page);
@@ -492,6 +503,77 @@ void html_write_index(char* author_name, bibentry* bib_entries, int nb_entries, 
 
 	// Message
 	printf("[X] index.html\n");
+}
+
+void html_write_year_page(int year, int nb_entries, bibentry* bib_entries, char *author_name) {
+	FILE *html_page = NULL;
+	char filename[MAXLENGTH];
+	char page_title[MAXLENGTH];
+	char temp_str[MAXLENGTH];
+	bibentry* bib_entries_this_year = malloc(nb_entries*sizeof(bibentry));
+	int i,j;
+	int categories_this_year[CATEGORIES_NB] = {0,0,0,0,0,0,0};
+
+	// Getting filename
+	sprintf(filename, "OUTPUT/year/%d.html", year);
+
+	// Creating year page
+	html_page = fopen(filename, "w");
+
+	// Titling page
+	// TODO check with Sontag website
+	sprintf(page_title, "Publications by %s in year %d", author_name, year);
+
+	// Writing header
+	html_write_header(html_page, page_title, author_name);;
+
+	// Back to index link
+	sprintf(temp_str, "\t\t</center><a href=\"../index.html\"><b>BACK TO INDEX</b></a><center>");
+	html_write(html_page, temp_str);
+
+	// Body
+	//// H1
+	sprintf(temp_str, "\n\t\t<h1>%s</h1>", page_title); //\n\t\t<h2>Year %d</h2> year
+	html_write(html_page, temp_str);
+
+	// detect entries corresponding to this year
+	j = 0;
+	for(i=0;i<nb_entries;i++) {
+		if(bib_entries[i].year == year) {
+			//bib_entries_this_year[]
+			memcpy(&bib_entries_this_year[j], &bib_entries[i], sizeof(bibentry));
+
+			// also store available categories
+			categories_this_year[bib_entries_this_year[j].category-1] = 1;
+
+			j += 1;
+		}
+	}
+
+	// TODO
+	//// H2 (categories)
+	for(i=0;i<CATEGORIES_NB;i++) {
+		if(categories_this_year[i] == 1) {
+			char *category_name = get_category_str(i+1);
+			sprintf(temp_str, "\n\t\t<h2>%s</h2>", category_name);
+			html_write(html_page, temp_str);
+		}
+	}
+
+	// Back to index link (bottom page)
+	sprintf(temp_str, "\n\t\t<br/><br/>\n\t\t</center><a href=\"../index.html\"><b>BACK TO INDEX</b></a><center>");
+	html_write(html_page, temp_str);
+
+	// Writing footer
+	html_write_footer(html_page);
+
+	// Closing file
+	fclose(html_page);
+
+	// Freeing allocated variables
+	free(bib_entries_this_year);
+
+	printf("[X] %d.html\n", year);
 }
 
 int bib_entries(char* filename) {
@@ -587,22 +669,16 @@ void bib_parser(bibentry* bib_entries, int nb_entries, char* filename) {
 }
 
 static int compare_int_inc(void const *a, void const *b) {
-   /* definir des pointeurs type's et initialise's
-      avec les parametres */
    int const *pa = a;
    int const *pb = b;
 
-   /* evaluer et retourner l'etat de l'evaluation (tri croissant) */
    return *pa - *pb;
 }
 
 static int compare_int_dec(void const *a, void const *b) {
-   /* definir des pointeurs type's et initialise's
-      avec les parametres */
    int const *pa = a;
    int const *pb = b;
 
-   /* evaluer et retourner l'etat de l'evaluation (tri croissant) */
    return *pb - *pa;
 }
 
@@ -618,4 +694,26 @@ void str_toupper(char* input) {
 		input[i] = toupper(input[i]);
 		i++;
 	}
+}
+
+char* get_category_str(int category_id) {
+	char output[MAXLENGTH];
+
+	if(category_id == 1) {
+		sprintf(output, "Books and proceedings");
+	} else if(category_id == 2) {
+		sprintf(output, "Thesis");
+	} else if(category_id == 3) {
+		sprintf(output, "Articles in journal or book's chapters");
+	} else if(category_id == 4) {
+		sprintf(output, "Conference's articles");
+	} else if(category_id == 5) {
+		sprintf(output, "Internal reports");
+	} else if(category_id == 6) {
+		sprintf(output, "Manuals, booklets");
+	} else if(category_id == 7) {
+		sprintf(output, "Miscellaneous");
+	}
+
+	return output;
 }

@@ -17,6 +17,7 @@
 // Project filenames
 #define PROPERTIES_FILENAME 		"PROPERTIES.TXT"
 #define INPUT_FILENAME				"INPUT.BIB"
+#define LOG_FILENAME				"log.txt"
 
 // Default values
 #define PROJECT_TITLE_DFLT			"List of Publications"

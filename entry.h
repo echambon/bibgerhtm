@@ -20,8 +20,6 @@ struct bibentry
 	int		edition;					// book's edition
 	char	editor[MAXLENGTH];			// editor
 	char	month[MAXLENGTH];			// 3 letters month identifier
-	char 	publisher[MAXLENGTH];
-	char 	school[MAXLENGTH];			// (for thesis)
 	char 	series[MAXLENGTH];
 	char 	url[5*MAXLENGTH];			// document's path on computer?
 
@@ -36,6 +34,9 @@ struct bibentry
 	char 	note[5*MAXLENGTH];			// various information
 	int 	volume;
 	int 	number;						// journal number
+	char 	publisher[MAXLENGTH];
+	char 	school[MAXLENGTH];			// (for thesis)
+	char	type[MAXLENGTH];
 
 	int 	category;
 	// 7 categories:
@@ -54,6 +55,5 @@ struct bibentry
 //institution : L'institution impliquée dans la publication (pas forcément l'éditeur).
 //key : Un champ caché utilisé pour spécifier ou remplacer l'ordre alphabétique des entrées (quand "author et "editor" ne sont pas présents).
 //organization : Le sponsor d'une conférence.
-//type : Le type.
 
 #endif /* ENTRY_H_ */

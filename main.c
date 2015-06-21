@@ -12,33 +12,18 @@
 #include <time.h>
 #include <ctype.h>
 
+#include "prototypes.h"
 #include "constants.h"
 #include "entry.h"
 
-void bib_parser(bibentry*, int, char*);
-int bib_entries(char*);
-
-void html_write_header(FILE*, char*, char*);
-void html_write_footer(FILE*);
-void html_write_index(char*, bibentry*, int, int*, int*, char*, char**);
-void html_write_year_page(int, int, bibentry*, char*);
-void html_write(FILE*, char*);
-void html_write_entry(FILE*, bibentry);
-
-int compare_int_inc(void const*, void const*);
-int compare_int_dec(void const*, void const*);
-int compare_str(void const*, void const*);
-int compare_char( const void*, const void*);
-
-void str_toupper(char*);
-char* get_category_str(int);
-
 //TODO create folders (output+subdirectories)
+//TODO url field management (pdf location on user's disk) --> copy pdf to OUTPUT/pdfdir
 
 int main()
 {
 	// Counters
 	int i,j,k;
+	int valid_entries;
 
 	// Welcome message
 	printf("bibgerhtm build-%d\n#######################################\n",VERSION);
@@ -90,29 +75,27 @@ int main()
 	int nb_entries = 0;
 	nb_entries = bib_entries(INPUT_FILENAME);
 
-	// Writing number of counted entries
-	printf("%d entries detected in %s\n", nb_entries, INPUT_FILENAME);
-
 	// Initializing array of struct
 	//printf("%d\n", sizeof(bibentry));
 	bibentry* bib_entries = NULL;
 	bib_entries = malloc(nb_entries * sizeof(bibentry));
 
 	// Loading in array of struct
-	bib_parser(bib_entries, nb_entries, INPUT_FILENAME);
+	valid_entries = bib_parser(bib_entries, nb_entries, INPUT_FILENAME);
 
-	// Message
+	// Messages
+	printf("%d/%d valid entries detected in %s\n", valid_entries, nb_entries, INPUT_FILENAME);
 	printf("%s loaded successfully!\n\nWriting files:\n", INPUT_FILENAME);
 
 	// Everything is loaded now!
 
 	// Available Years
-	int *array_years = malloc(nb_entries*sizeof(int)); // supposing all entries have a different year
-	for(i=0; i<nb_entries; i++) { array_years[i] = 0; }
+	int *array_years = malloc(valid_entries*sizeof(int)); // supposing all entries have a different year
+	for(i=0; i<valid_entries; i++) { array_years[i] = 0; }
 	int year_ispresent;
-	for(i=0; i<nb_entries; i++) {
+	for(i=0; i<valid_entries; i++) {
 		year_ispresent = 0;
-		for(j=0; j<nb_entries; j++) {
+		for(j=0; j<valid_entries; j++) {
 			if(array_years[j] == bib_entries[i].year) {
 				year_ispresent = 1;
 			}
@@ -133,7 +116,7 @@ int main()
 	int *array_categories = malloc(CATEGORIES_NB*sizeof(int)); // there are 7 categories!
 	for(i=0; i<CATEGORIES_NB; i++) { array_categories[i] = 0; }
 	int category_ispresent;
-	for(i=0; i<nb_entries; i++) {
+	for(i=0; i<valid_entries; i++) {
 		category_ispresent = 0;
 		for(j=0; j<CATEGORIES_NB; j++) {
 			if(array_categories[j] == bib_entries[i].category) {
@@ -153,12 +136,12 @@ int main()
 	qsort(array_categories, j+1, sizeof(int), compare_int_inc);
 
 	// Available co-authors
-	char **array_coauthors = malloc(MAX_COAUTHORS*nb_entries*sizeof(char*));
+	char **array_coauthors = malloc(MAX_COAUTHORS*valid_entries*sizeof(char*));
 	char coauthors_initials[26];
 
 	// Initialize arrays
 	for(i=0;i<26;i++) { coauthors_initials[i] = 0; }
-	for(i=0;i<MAX_COAUTHORS*nb_entries;i++) { array_coauthors[i] = malloc(MAXLENGTH*sizeof(char)); array_coauthors[i][0] = '\0'; }
+	for(i=0;i<MAX_COAUTHORS*valid_entries;i++) { array_coauthors[i] = malloc(MAXLENGTH*sizeof(char)); array_coauthors[i][0] = '\0'; }
 
 	char initial;
 	char entry_authors[MAXLENGTH];
@@ -166,7 +149,7 @@ int main()
 	int coauthor_ispresent; int initial_ispresent;
 
 	// PROBLEM WITH FIRST AUTHOR SOMETIMES ?
-	for(i=0; i<nb_entries; i++) {
+	for(i=0; i<valid_entries; i++) {
 		coauthor_ispresent = 0; initial_ispresent = 0;
 		strcpy(entry_authors, bib_entries[i].authors);
 
@@ -181,7 +164,7 @@ int main()
 					// Detect if author is not the user
 					if((strcmp(current_author, author_name_article) != 0) && (strcmp(current_author, author_name_article2) != 0)) {
 						// Detect if author already present in database (array_coauthors)
-						for(j=0;j<MAX_COAUTHORS*nb_entries;j++) {
+						for(j=0;j<MAX_COAUTHORS*valid_entries;j++) {
 							if(strcmp(current_author, array_coauthors[j]) == 0) {
 								coauthor_ispresent = 1;
 							}
@@ -219,7 +202,7 @@ int main()
 				if(token == NULL) {
 					if((strcmp(current_author, author_name_article) != 0) && (strcmp(current_author, author_name_article2) != 0)) {
 						// Detect if author already present in database (array_coauthors)
-						for(j=0;j<MAX_COAUTHORS*nb_entries;j++) {
+						for(j=0;j<MAX_COAUTHORS*valid_entries;j++) {
 							if(strcmp(current_author, array_coauthors[j]) == 0) {
 								coauthor_ispresent = 1;
 							}
@@ -259,7 +242,7 @@ int main()
 	qsort(coauthors_initials, 26, sizeof(char), compare_char);
 
 	// array_coauthors ordering
-	qsort(array_coauthors, MAX_COAUTHORS*nb_entries, sizeof(char*), compare_str);
+	qsort(array_coauthors, MAX_COAUTHORS*valid_entries, sizeof(char*), compare_str);
 
 	//// Creating empty CSS file
 	FILE* css_empty_file = NULL;
@@ -272,12 +255,12 @@ int main()
 	//char page_title[MAXLENGTH];
 
 	// Index page as OUTPUT/index.html
-	html_write_index(author_name, bib_entries, nb_entries, array_years, array_categories, coauthors_initials, array_coauthors);
+	html_write_index(author_name, bib_entries, valid_entries, array_years, array_categories, coauthors_initials, array_coauthors);
 
 	// Year pages (array_years) in OUTPUT/year/
-	for(i=0;i<nb_entries;i++) {
+	for(i=0;i<valid_entries;i++) {
 		if(array_years[i] != 0) {
-			html_write_year_page(array_years[i], nb_entries, bib_entries, author_name);
+			html_write_year_page(array_years[i], valid_entries, bib_entries, author_name);
 		}
 	}
 
@@ -292,7 +275,7 @@ int main()
 	free(bib_entries);
 	free(array_years);
 	free(array_categories);
-	for(i=0;i<MAX_COAUTHORS*nb_entries;i++) { free(array_coauthors[i]); }
+	for(i=0;i<MAX_COAUTHORS*valid_entries;i++) { free(array_coauthors[i]); }
 	free(array_coauthors);
 
 	// Pausing and exiting
@@ -578,16 +561,37 @@ void html_write_year_page(int year, int nb_entries, bibentry* bib_entries, char 
 }
 
 void html_write_entry(FILE* html_page, bibentry entry) {
-	// TODO manage author's names
-	if(entry.category == 3) {
+	// TODO manage author's and editors names
+	// Books and proceedings
+	if(entry.category == 1) {
+
+	// Thesis
+	} else if(entry.category == 2) {
+		fprintf(html_page, "%s. <b>%s</b>. PhD. thesis, %s, ", entry.authors, entry.title, entry.school);
+		if(strcmp(entry.note, "") != 0) {
+			fprintf(html_page, "%s, ", entry.note);
+		}
+		fprintf(html_page, "%d.", entry.year);
+		//abstract, if any
+		if(strcmp(entry.abstract, "") != 0) {
+			fprintf(html_page, "<center>Abstract:<table width=\"80%%\" border=\"1\"><tr><td>%s</td></tr></table></center>", entry.abstract);
+		}
+	// Articles in journal or book's chapters
+	} else if(entry.category == 3) {
 		fprintf(html_page, "%s. <b>%s</b>. ", entry.authors, entry.title);
 		if(strcmp(entry.editor, "") != 0) {
-			// TODO
-			fprintf(html_page, "In %s, ", entry.editor);
+			fprintf(html_page, "In %s, editors, <i>%s</i>, pages %s. %s, ", entry.editor, entry.booktitle, entry.pages, entry.publisher);
 		} else {
-			fprintf(html_page, "<i>%s</i>, %d(%d):%s, ", entry.journal, 1, 1, entry.pages);
+			fprintf(html_page, "<i>%s</i>, %d", entry.journal, entry.volume);
+			if(entry.number != 0) {
+				fprintf(html_page, "(%d)", entry.number);
+			}
+			fprintf(html_page, ":%s, ", entry.pages);
 		}
-		fprintf(html_page, "%d. [PDF] ", entry.year);
+		fprintf(html_page, "%d. ", entry.year);
+		if(strcmp(entry.url, "") != 0) {
+			fprintf(html_page, "[PDF] ");
+		}
 
 		if(strcmp(entry.keywords, "") != 0) {
 			fprintf(html_page, "Keyword(s): %s. ", entry.keywords);
@@ -598,124 +602,13 @@ void html_write_entry(FILE* html_page, bibentry entry) {
 			fprintf(html_page, "<i>Note</i>: %s. ", entry.note);
 		}
 
-		// abstract
+		// abstract, if any
 		if(strcmp(entry.abstract, "") != 0) {
-			fprintf(html_page, "<center>Abstract:<table border=\"1\"><tr><td>%s</td></tr></table></center>", entry.abstract);
+			fprintf(html_page, "<center>Abstract:<table width=\"80%%\" border=\"1\"><tr><td>%s</td></tr></table></center>", entry.abstract);
 		}
 	} else {
 		fprintf(html_page, "(UNDER WORK) %s, %d", entry.title, entry.year);
 	}
-}
-
-int bib_entries(char* filename) {
-	int res = 0; char cur_line[MAXLENGTH];
-	FILE* bib_file = NULL;
-	bib_file = fopen(filename, "r");
-
-	if(bib_file != NULL) {
-		// Count number of characters @
-		while (fgets(cur_line, MAXLENGTH, bib_file) != NULL) {
-			if (strchr("@", *cur_line)) {
-				res += 1;
-			}
-		}
-	}
-
-	fclose(bib_file);
-	return res;
-}
-
-void bib_parser(bibentry* bib_entries, int nb_entries, char* filename) {
-	int bib_counter = -1;
-	//int opened = 0;
-	char cur_line[20*MAXLENGTH];
-	FILE* bib_file = NULL; bib_file = fopen(filename, "r");
-	//bibentry* bib_entries = malloc(nb_entries*sizeof(bibentry));
-
-	if(bib_file != NULL) {
-		while (fgets(cur_line, MAXLENGTH, bib_file) != NULL) {
-			// Check for character '@' which indicates a new entry
-			if (strchr("@", *cur_line)) {
-				bib_counter += 1;
-
-				// Getting category name
-				char *category_name = strtok(cur_line, "@{");
-				//printf("%s\n",category_name);
-				// Assigning category
-				if((strcmp(category_name,"book") == 0) || (strcmp(category_name,"proceedings") == 0)) {
-					bib_entries[bib_counter].category = 1;
-				} else if(strcmp(category_name,"phdthesis") == 0) {
-					bib_entries[bib_counter].category = 2;
-				} else if((strcmp(category_name,"inbook") == 0) || (strcmp(category_name,"incollection") == 0) || (strcmp(category_name,"article") == 0)) {
-					bib_entries[bib_counter].category = 3;
-				} else if(strcmp(category_name,"inproceedings") == 0) {
-					bib_entries[bib_counter].category = 4;
-				} else if(strcmp(category_name,"techreport") == 0) {
-					bib_entries[bib_counter].category = 5;
-				} else if((strcmp(category_name,"booklet") == 0) || (strcmp(category_name,"manual") == 0)) {
-					bib_entries[bib_counter].category = 6;
-				} else if((strcmp(category_name,"mastersthesis") == 0) || (strcmp(category_name,"audiovisual") == 0) || (strcmp(category_name,"film") == 0) || (strcmp(category_name,"misc") == 0) || (strcmp(category_name,"unpublished") == 0)) {
-					bib_entries[bib_counter].category = 7;
-				}
-			} else {
-				// Split string along "=", then "{" and "}"
-				char *token = strtok(cur_line, "= {}\t\n");
-
-				if(token) {
-					// Getting field
-					char *field = malloc(sizeof(char)*strlen(token));
-					strcpy(field, token);
-
-					// Getting value
-					token = strtok(NULL, "=\n");
-					if(token) {
-						//TODO problem with token and abstract, the whole abstract is not obtained...
-						char *value = malloc(sizeof(char)*strlen(token));
-
-						sscanf(token," {%[0-9a-zA-Z,.- ]},",value);
-						if(value != NULL && field != NULL) {
-							// Fill fields (that's hard to say!)
-							if(strcmp(field,"year") == 0) { // YEAR
-								char *end;
-								int value_year = strtol(value, &end, 10);
-								bib_entries[bib_counter].year = value_year;
-							} else if(strcmp(field,"author") == 0) { // AUTHOR
-								strcpy(bib_entries[bib_counter].authors,value);
-							} else if(strcmp(field,"title") == 0) { // TITLE
-								strcpy(bib_entries[bib_counter].title,value);
-							} else if(strcmp(field,"abstract") == 0) { // ABSTRACT
-								strcpy(bib_entries[bib_counter].abstract,value);
-							} else if(strcmp(field,"keywords") == 0) { // KEYWORDS
-								strcpy(bib_entries[bib_counter].keywords,value);
-							} else if(strcmp(field,"booktitle") == 0) { // BOOKTITLE
-								strcpy(bib_entries[bib_counter].booktitle,value);
-							} else if(strcmp(field,"pages") == 0) { // PAGES
-								strcpy(bib_entries[bib_counter].pages,value);
-							} else if(strcmp(field,"journal") == 0) { // JOURNAL
-								strcpy(bib_entries[bib_counter].journal,value);
-							} else if(strcmp(field,"note") == 0) { // NOTE
-								strcpy(bib_entries[bib_counter].note,value);
-							} else if(strcmp(field,"volume") == 0) { // VOLUME
-								char *end;
-								int value_volume = strtol(value, &end, 10);
-								bib_entries[bib_counter].volume = value_volume;
-							} else if(strcmp(field,"number") == 0) { // NUMBER
-								char *end;
-								int value_number = strtol(value, &end, 10);
-								bib_entries[bib_counter].number = value_number;
-							}
-						}
-
-						free(value);
-					}
-
-					free(field);
-				}
-			}
-		}
-	}
-
-	fclose(bib_file);
 }
 
 int compare_int_inc(void const *a, void const *b) {

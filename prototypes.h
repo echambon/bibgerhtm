@@ -32,5 +32,11 @@ int bib_entries(char*);
 
 // logfile.c
 void log_to_file(int, const char*, ...);
+void reset_logfile();
+
+// utilities
+#ifdef _WINDOWS
+	#define strcasecmp stricmp
+#endif
 
 #endif /* PROTOTYPES_H_ */

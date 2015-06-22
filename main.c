@@ -305,7 +305,7 @@ void html_write_footer(FILE* filename) {
 	fputs("\n\t<br/><br/><i>This material is presented to ensure timely dissemination of scholarly and technical work. Copyright and all rights therein are retained by authors or by other copyright holders.</i>",filename);
 	fputs("\n\t<hr>\n\tLast updated: ",filename);
 	fprintf(filename, "<i>%02d/%02d/%d - %02d:%02d</i>\n", instant.tm_year+1900, instant.tm_mon+1, instant.tm_mday, instant.tm_hour, instant.tm_min);
-	fputs("\t<hr>\n\tGenerated from BibT<sub>E</sub>X by <a href=\"http://echambon.contact.free.fr/en/bibgerhtm.php\" target=\"blank\"><em>bibgerhtm</em></a>, itself inspired by <a href=\"http://www-sop.inria.fr/epidaure/personnel/malandain/codes/bibtex2html.html\" target=\"blank\"><em>bibtex2html</em></a>.\n</body>\n</html>", filename);
+	fputs("\t<hr>\n\tGenerated from <i>BibT<sub>E</sub>X</i> by <a href=\"http://echambon.contact.free.fr/en/bibgerhtm.php\" target=\"blank\"><em>bibgerhtm</em></a>, itself inspired by <a href=\"http://www-sop.inria.fr/epidaure/personnel/malandain/codes/bibtex2html.html\" target=\"blank\"><em>bibtex2html</em></a>.\n</body>\n</html>", filename);
 }
 
 void html_write(FILE* filename, char* content) {
@@ -564,7 +564,38 @@ void html_write_entry(FILE* html_page, bibentry entry) {
 	// TODO manage author's and editors names
 	// Books and proceedings
 	if(entry.category == 1) {
+		fprintf(html_page, "%s. <b>%s</b>", entry.authors, entry.title);
+		if((entry.volume != 0) && (strcmp(entry.series, "") != 0)) {
+			fprintf(html_page, ", volume %d of <i>%s</i>", entry.volume, entry.series);
+		}
+		fprintf(html_page, ". %s, ", entry.publisher);
+		if(strcmp(entry.address, "") != 0) {
+			fprintf(html_page, "%s, ", entry.address);
+		}
+		if(strcmp(entry.edition, "") != 0) {
+			fprintf(html_page, "%s, ", entry.edition);
+		}
+		fprintf(html_page, "%d. ", entry.year);
+		if(strcmp(entry.isbn, "") != 0) {
+			fprintf(html_page, "ISBN: %s. ", entry.isbn);
+		}
+		if(strcmp(entry.url, "") != 0) {
+			fprintf(html_page, "[PDF] ");
+		}
 
+		if(strcmp(entry.keywords, "") != 0) {
+			fprintf(html_page, "Keyword(s): %s. ", entry.keywords);
+		}
+
+		// print note, if any:
+		if(strcmp(entry.note, "") != 0) {
+			fprintf(html_page, "<i>Note</i>: %s. ", entry.note);
+		}
+
+		// abstract, if any
+		if(strcmp(entry.abstract, "") != 0) {
+			fprintf(html_page, "<center>Abstract:<table width=\"80%%\" border=\"1\"><tr><td>%s</td></tr></table></center>", entry.abstract);
+		}
 	// Thesis
 	} else if(entry.category == 2) {
 		fprintf(html_page, "%s. <b>%s</b>. PhD. thesis, %s, ", entry.authors, entry.title, entry.school);
@@ -587,6 +618,30 @@ void html_write_entry(FILE* html_page, bibentry entry) {
 				fprintf(html_page, "(%d)", entry.number);
 			}
 			fprintf(html_page, ":%s, ", entry.pages);
+		}
+		fprintf(html_page, "%d. ", entry.year);
+		if(strcmp(entry.url, "") != 0) {
+			fprintf(html_page, "[PDF] ");
+		}
+
+		if(strcmp(entry.keywords, "") != 0) {
+			fprintf(html_page, "Keyword(s): %s. ", entry.keywords);
+		}
+
+		// print note, if any:
+		if(strcmp(entry.note, "") != 0) {
+			fprintf(html_page, "<i>Note</i>: %s. ", entry.note);
+		}
+
+		// abstract, if any
+		if(strcmp(entry.abstract, "") != 0) {
+			fprintf(html_page, "<center>Abstract:<table width=\"80%%\" border=\"1\"><tr><td>%s</td></tr></table></center>", entry.abstract);
+		}
+	// Conference articles
+	} else if(entry.category == 4) {
+		fprintf(html_page, "%s. <b>%s</b>. In <i>%s</i>, ", entry.authors, entry.title, entry.booktitle);
+		if(strcmp(entry.pages, "") != 0) {
+			fprintf(html_page, "pages %s, ", entry.pages);
 		}
 		fprintf(html_page, "%d. ", entry.year);
 		if(strcmp(entry.url, "") != 0) {
@@ -653,7 +708,7 @@ char* get_category_str(int category_id) {
 	} else if(category_id == 3) {
 		sprintf(output, "Articles in journal or book's chapters");
 	} else if(category_id == 4) {
-		sprintf(output, "Conference's articles");
+		sprintf(output, "Conference articles");
 	} else if(category_id == 5) {
 		sprintf(output, "Internal reports");
 	} else if(category_id == 6) {

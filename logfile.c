@@ -18,7 +18,7 @@
  * Variable number of input variables is supported.
  */
 void log_to_file(int line_nb, const char *str, ...) {
-	FILE* file = fopen(LOG_FILENAME, "w");
+	FILE* file = fopen(LOG_FILENAME, "a");
 	va_list ap;
 
 	fprintf(file, "%d: ", line_nb);
@@ -26,5 +26,14 @@ void log_to_file(int line_nb, const char *str, ...) {
 	vfprintf(file, str, ap);
 	va_end(ap);
 
+	fclose(file);
+}
+
+/**
+ * reset_logfile
+ * Resetting logfile from previous run since we append data to an existing file.
+ */
+void reset_logfile() {
+	FILE* file = fopen(LOG_FILENAME, "w");
 	fclose(file);
 }

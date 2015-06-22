@@ -14,15 +14,15 @@ typedef struct bibentry bibentry;
 
 struct bibentry
 {
-	char 	address[MAXLENGTH];			// editor's address
 	char 	annote[MAXLENGTH];			// annotation
 	int 	chapter;					// chapter number
-	int		edition;					// book's edition
+	char	edition[MAXLENGTH];			// book's edition
 	char	editor[MAXLENGTH];			// editor
 	char	month[MAXLENGTH];			// 3 letters month identifier
 	char 	series[MAXLENGTH];
 	char 	url[5*MAXLENGTH];			// document's path on computer?
 
+	char 	address[MAXLENGTH];			// editor's address
 	int		year;
 	char 	authors[MAXLENGTH];			// authors names
 	char 	title[4*MAXLENGTH];
@@ -37,13 +37,14 @@ struct bibentry
 	char 	publisher[MAXLENGTH];
 	char 	school[MAXLENGTH];			// (for thesis)
 	char	type[MAXLENGTH];
+	char 	isbn[MAXLENGTH];
 
 	int 	category;
 	// 7 categories:
 	// 1 - Books and proceedings (@book, @proceedings)
 	// 2 - Thesis (@phdthesis)
 	// 3 - Articles in journal or book's chapters (@inbook, @incollection, @article)
-	// 4 - Conference's articles (@inproceedings)
+	// 4 - Conference articles (@inproceedings)
 	// 5 - Internal reports (@techreport)
 	// 6 - Manuals, booklets (@booklet, @manual)
 	// 7 - Miscellaneous (@mastersthesis, @audiovisual, @film, @misc, @unpublished)

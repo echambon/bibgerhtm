@@ -13,18 +13,21 @@
 #include "constants.h"
 #include "entry.h"
 
-//TODO log file to enumerate missing fields (implement in bib_parser), cf. define arrays of required field for each type
+//TODO define arrays of required fields for each type
 //TODO review bib_parser!
 //TODO manage maximum length for strings wrt considered field
 
 /**
  * bib_parser
- * (simple) BIBTEX file parser.
+ * A (simple) BIBTEX file parser.
  */
 int bib_parser(bibentry* bib_entries, int nb_entries, char* filename) {
 	int bib_counter = -1;
 	int reject_entry = 0;
 	int line_count = 0;
+
+	// Resetting previous logfile
+	reset_logfile();
 
 	char cur_line[20*MAXLENGTH];
 	FILE* bib_file = NULL; bib_file = fopen(filename, "r");
@@ -40,22 +43,22 @@ int bib_parser(bibentry* bib_entries, int nb_entries, char* filename) {
 				char *category_name = strtok(cur_line, "@{");
 
 				// Assigning category
-				if((strcmp(category_name,"book") == 0) || (strcmp(category_name,"proceedings") == 0)) {
+				if((strcasecmp(category_name,"book") == 0) || (strcasecmp(category_name,"proceedings") == 0)) {
 					bib_entries[bib_counter].category = 1;
-				} else if(strcmp(category_name,"phdthesis") == 0) {
+				} else if(strcasecmp(category_name,"phdthesis") == 0) {
 					bib_entries[bib_counter].category = 2;
-				} else if((strcmp(category_name,"inbook") == 0) || (strcmp(category_name,"incollection") == 0) || (strcmp(category_name,"article") == 0)) {
+				} else if((strcasecmp(category_name,"inbook") == 0) || (strcasecmp(category_name,"incollection") == 0) || (strcasecmp(category_name,"article") == 0)) {
 					bib_entries[bib_counter].category = 3;
-				} else if(strcmp(category_name,"inproceedings") == 0) {
+				} else if(strcasecmp(category_name,"inproceedings") == 0) {
 					bib_entries[bib_counter].category = 4;
-				} else if(strcmp(category_name,"techreport") == 0) {
+				} else if(strcasecmp(category_name,"techreport") == 0) {
 					bib_entries[bib_counter].category = 5;
-				} else if((strcmp(category_name,"booklet") == 0) || (strcmp(category_name,"manual") == 0)) {
+				} else if((strcasecmp(category_name,"booklet") == 0) || (strcasecmp(category_name,"manual") == 0)) {
 					bib_entries[bib_counter].category = 6;
-				} else if((strcmp(category_name,"mastersthesis") == 0) || (strcmp(category_name,"audiovisual") == 0) || (strcmp(category_name,"film") == 0) || (strcmp(category_name,"misc") == 0) || (strcmp(category_name,"unpublished") == 0)) {
+				} else if((strcasecmp(category_name,"mastersthesis") == 0) || (strcasecmp(category_name,"audiovisual") == 0) || (strcasecmp(category_name,"film") == 0) || (strcasecmp(category_name,"misc") == 0) || (strcasecmp(category_name,"unpublished") == 0)) {
 					bib_entries[bib_counter].category = 7;
 				} else {
-					log_to_file(line_count, "invalid token @%s, entry rejected", category_name);
+					log_to_file(line_count, "invalid token @%s, entry rejected\n", category_name);
 					reject_entry = 1;
 				}
 
@@ -85,40 +88,44 @@ int bib_parser(bibentry* bib_entries, int nb_entries, char* filename) {
 							sscanf(token," {%[0-9a-zA-Z,.- ]},",value);
 							if(value != NULL && field != NULL) {
 								// Fill fields (that's hard to say!)
-								if(strcmp(field,"year") == 0) { // YEAR
+								if(strcasecmp(field,"year") == 0) { // YEAR
 									char *end;
 									int value_year = strtol(value, &end, 10);
 									bib_entries[bib_counter].year = value_year;
-								} else if(strcmp(field,"author") == 0) { // AUTHOR
+								} else if(strcasecmp(field,"author") == 0) { // AUTHOR
 									strcpy(bib_entries[bib_counter].authors,value);
-								} else if(strcmp(field,"title") == 0) { // TITLE
+								} else if(strcasecmp(field,"title") == 0) { // TITLE
 									strcpy(bib_entries[bib_counter].title,value);
-								} else if(strcmp(field,"abstract") == 0) { // ABSTRACT
+								} else if(strcasecmp(field,"abstract") == 0) { // ABSTRACT
 									strcpy(bib_entries[bib_counter].abstract,value);
-								} else if(strcmp(field,"keywords") == 0) { // KEYWORDS
+								} else if(strcasecmp(field,"keywords") == 0) { // KEYWORDS
 									strcpy(bib_entries[bib_counter].keywords,value);
-								} else if(strcmp(field,"booktitle") == 0) { // BOOKTITLE
+								} else if(strcasecmp(field,"booktitle") == 0) { // BOOKTITLE
 									strcpy(bib_entries[bib_counter].booktitle,value);
-								} else if(strcmp(field,"pages") == 0) { // PAGES
+								} else if(strcasecmp(field,"pages") == 0) { // PAGES
 									strcpy(bib_entries[bib_counter].pages,value);
-								} else if(strcmp(field,"journal") == 0) { // JOURNAL
+								} else if(strcasecmp(field,"journal") == 0) { // JOURNAL
 									strcpy(bib_entries[bib_counter].journal,value);
-								} else if(strcmp(field,"note") == 0) { // NOTE
+								} else if(strcasecmp(field,"note") == 0) { // NOTE
 									strcpy(bib_entries[bib_counter].note,value);
-								} else if(strcmp(field,"volume") == 0) { // VOLUME
+								} else if(strcasecmp(field,"volume") == 0) { // VOLUME
 									char *end;
 									int value_volume = strtol(value, &end, 10);
 									bib_entries[bib_counter].volume = value_volume;
-								} else if(strcmp(field,"number") == 0) { // NUMBER
+								} else if(strcasecmp(field,"number") == 0) { // NUMBER
 									char *end;
 									int value_number = strtol(value, &end, 10);
 									bib_entries[bib_counter].number = value_number;
-								} else if(strcmp(field,"publisher") == 0) { // PUBLISHER
+								} else if(strcasecmp(field,"publisher") == 0) { // PUBLISHER
 									strcpy(bib_entries[bib_counter].publisher,value);
-								} else if(strcmp(field,"school") == 0) { // PUBLISHER
+								} else if(strcasecmp(field,"school") == 0) { // PUBLISHER
 									strcpy(bib_entries[bib_counter].school,value);
-								} else if(strcmp(field,"url") == 0) { // PUBLISHER
+								} else if(strcasecmp(field,"url") == 0) { // PUBLISHER
 									strcpy(bib_entries[bib_counter].url,value);
+								} else if(strcasecmp(field,"address") == 0) { // PUBLISHER
+									strcpy(bib_entries[bib_counter].address,value);
+								} else if(strcasecmp(field,"isbn") == 0) { // PUBLISHER
+									strcpy(bib_entries[bib_counter].isbn,value);
 								}
 							}
 

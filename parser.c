@@ -30,8 +30,10 @@ int bib_parser(bibentry* bib_entries, int nb_entries, char* filename) {
 	reset_logfile();
 
 	char cur_line[20*MAXLENGTH];
+	char *category_name, *token, *field, *value;
 	FILE* bib_file = NULL; bib_file = fopen(filename, "r");
 
+	// TODO implement as a state-machine?
 	if(bib_file != NULL) {
 		while (fgets(cur_line, 20*MAXLENGTH, bib_file) != NULL) {
 			line_count += 1;
@@ -40,7 +42,7 @@ int bib_parser(bibentry* bib_entries, int nb_entries, char* filename) {
 				reject_entry = 0; bib_counter += 1;
 
 				// Getting category name
-				char *category_name = strtok(cur_line, "@{");
+				category_name = strtok(cur_line, "@{");
 
 				// Assigning category
 				if((strcasecmp(category_name,"book") == 0) || (strcasecmp(category_name,"proceedings") == 0)) {
@@ -71,19 +73,18 @@ int bib_parser(bibentry* bib_entries, int nb_entries, char* filename) {
 			} else {
 				if(!reject_entry) {
 					// Split string along "=", then "{" and "}"
-					//TODO problem with token and abstract, the whole abstract is not obtained...
 					//TODO problem with strings containing ":" and possibly other punctuation
-					char *token = strtok(cur_line, "= {}\t\n");
+					token = strtok(cur_line, "= {}\t\n");
 
 					if(token) {
 						// Getting field
-						char *field = malloc(sizeof(char)*strlen(token));
+						field = malloc(sizeof(char)*strlen(token));
 						strcpy(field, token);
 
 						// Getting value
 						token = strtok(NULL, "=\n");
 						if(token) {
-							char *value = malloc(sizeof(char)*strlen(token));
+							value = malloc(sizeof(char)*strlen(token));
 
 							sscanf(token," {%[0-9a-zA-Z,.- ]},",value);
 							if(value != NULL && field != NULL) {
@@ -126,19 +127,19 @@ int bib_parser(bibentry* bib_entries, int nb_entries, char* filename) {
 									strcpy(bib_entries[bib_counter].address,value);
 								} else if(strcasecmp(field,"isbn") == 0) { // PUBLISHER
 									strcpy(bib_entries[bib_counter].isbn,value);
+								} else if(strcasecmp(field,"editor") == 0) { // EDITOR
+									strcpy(bib_entries[bib_counter].editor,value);
 								}
 							}
-
-							free(value);
 						}
-
-						free(field);
 					}
 				}
 			}
 		}
 	}
 
+	free(field);
+	free(value);
 	fclose(bib_file);
 	return bib_counter+1;
 }

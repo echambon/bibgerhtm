@@ -30,11 +30,10 @@ int main()
 
 	// Loading project files
 	printf("Loading project files...\n");
-	FILE *properties_file = NULL, *input_file = NULL;
+	FILE *properties_file = NULL;
 	char file_reader[MAXLENGTH];
 
 	properties_file = fopen(PROPERTIES_FILENAME, "r");
-	input_file 		= fopen(INPUT_FILENAME, "r");
 
 	// Project variables
 	char project_title[MAXLENGTH];
@@ -68,7 +67,7 @@ int main()
 	}
 
 	// Closing project files
-	fclose(properties_file); fclose(input_file);
+	fclose(properties_file);
 
 	//// Parsing INPUT.BIB file and allocating variables
 	// Parse a first time to count number of entries (use @ char)
@@ -76,7 +75,6 @@ int main()
 	nb_entries = bib_entries(INPUT_FILENAME);
 
 	// Initializing array of struct
-	//printf("%d\n", sizeof(bibentry));
 	bibentry* bib_entries = NULL;
 	bib_entries = malloc(nb_entries * sizeof(bibentry));
 
@@ -527,7 +525,8 @@ void html_write_year_page(int year, int nb_entries, bibentry* bib_entries, char 
 	//// H2 (categories)
 	for(i=0;i<CATEGORIES_NB;i++) {
 		if(categories_this_year[i] == 1) {
-			char *category_name = get_category_str(i+1);
+			char *category_name = malloc(MAXLENGTH*sizeof(char));
+			get_category_str(category_name, i+1);
 			sprintf(temp_str, "\n\t\t<h2>%s</h2>", category_name);
 			html_write(html_page, temp_str);
 
@@ -544,6 +543,9 @@ void html_write_year_page(int year, int nb_entries, bibentry* bib_entries, char 
 
 			// end of the ordered list
 			fputs("\n\t\t\t</ol><center>", html_page);
+
+			// garbage collector
+			free(category_name);
 		}
 	}
 
@@ -698,8 +700,8 @@ void str_toupper(char* input) {
 	}
 }
 
-char* get_category_str(int category_id) {
-	char output[MAXLENGTH];
+void get_category_str(char* output, int category_id) {
+//	char output[MAXLENGTH];
 
 	if(category_id == 1) {
 		sprintf(output, "Books and proceedings");
@@ -717,5 +719,5 @@ char* get_category_str(int category_id) {
 		sprintf(output, "Miscellaneous");
 	}
 
-	return output;
+//	return output;
 }

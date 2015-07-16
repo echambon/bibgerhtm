@@ -25,8 +25,8 @@ struct bibentry
 	char 	address[MAXLENGTH];			// editor's address
 	int		year;
 	char 	authors[MAXLENGTH];			// authors names
-	char 	title[4*MAXLENGTH];
-	char 	keywords[2*MAXLENGTH];		// keywords
+	char 	title[5*MAXLENGTH];
+	char 	keywords[10*MAXLENGTH];		// keywords
 	char 	abstract[20*MAXLENGTH];		// article's abstract
 	char 	pages[MAXLENGTH];			//
 	char 	booktitle[MAXLENGTH]; 		// book's title

@@ -24,7 +24,7 @@ int compare_str(void const*, void const*);
 int compare_char( const void*, const void*);
 
 void str_toupper(char*);
-char* get_category_str(int);
+void get_category_str(char*, int);
 
 // parser.c
 int bib_parser(bibentry*, int, char*);

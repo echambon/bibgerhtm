@@ -18,9 +18,9 @@
 
 //TODO create folders (output+subdirectories)
 //TODO url field management (pdf location on user's disk) --> copy pdf to OUTPUT/pdfdir
+//TODO apply flip_authors_names to editors field
 
-int main()
-{
+int main() {
 	// Counters
 	int i,j,k;
 	int valid_entries;
@@ -565,8 +565,13 @@ void html_write_year_page(int year, int nb_entries, bibentry* bib_entries, char 
 void html_write_entry(FILE* html_page, bibentry entry) {
 	// TODO manage author's and editors names
 	// Books and proceedings
+	char *flipped_authors = malloc(MAXLENGTH*sizeof(char));
+	flip_authors_names(flipped_authors, entry.authors);
+	printf("%s\n", flipped_authors);
+
 	if(entry.category == 1) {
-		fprintf(html_page, "%s. <b>%s</b>", entry.authors, entry.title);
+//		fprintf(html_page, "%s. <b>%s</b>", entry.authors, entry.title);
+		fprintf(html_page, "%s. <b>%s</b>", flipped_authors, entry.title);
 		if((entry.volume != 0) && (strcmp(entry.series, "") != 0)) {
 			fprintf(html_page, ", volume %d of <i>%s</i>", entry.volume, entry.series);
 		}
@@ -600,7 +605,8 @@ void html_write_entry(FILE* html_page, bibentry entry) {
 		}
 	// Thesis
 	} else if(entry.category == 2) {
-		fprintf(html_page, "%s. <b>%s</b>. PhD. thesis, %s, ", entry.authors, entry.title, entry.school);
+//		fprintf(html_page, "%s. <b>%s</b>. PhD. thesis, %s, ", entry.authors, entry.title, entry.school);
+		fprintf(html_page, "%s. <b>%s</b>. PhD. thesis, %s, ", flipped_authors, entry.title, entry.school);
 		if(strcmp(entry.note, "") != 0) {
 			fprintf(html_page, "%s, ", entry.note);
 		}
@@ -611,7 +617,8 @@ void html_write_entry(FILE* html_page, bibentry entry) {
 		}
 	// Articles in journal or book's chapters
 	} else if(entry.category == 3) {
-		fprintf(html_page, "%s. <b>%s</b>. ", entry.authors, entry.title);
+//		fprintf(html_page, "%s. <b>%s</b>. ", entry.authors, entry.title);
+		fprintf(html_page, "%s. <b>%s</b>. ", flipped_authors, entry.title);
 		if(strcmp(entry.editor, "") != 0) {
 			fprintf(html_page, "In %s, editors, <i>%s</i>, pages %s. %s, ", entry.editor, entry.booktitle, entry.pages, entry.publisher);
 		} else {
@@ -641,7 +648,8 @@ void html_write_entry(FILE* html_page, bibentry entry) {
 		}
 	// Conference articles
 	} else if(entry.category == 4) {
-		fprintf(html_page, "%s. <b>%s</b>. In <i>%s</i>, ", entry.authors, entry.title, entry.booktitle);
+//		fprintf(html_page, "%s. <b>%s</b>. In <i>%s</i>, ", entry.authors, entry.title, entry.booktitle);
+		fprintf(html_page, "%s. <b>%s</b>. In <i>%s</i>, ", flipped_authors, entry.title, entry.booktitle);
 		if(strcmp(entry.pages, "") != 0) {
 			fprintf(html_page, "pages %s, ", entry.pages);
 		}
@@ -666,6 +674,8 @@ void html_write_entry(FILE* html_page, bibentry entry) {
 	} else {
 		fprintf(html_page, "(UNDER WORK) %s, %d", entry.title, entry.year);
 	}
+
+	free(flipped_authors);
 }
 
 int compare_int_inc(void const *a, void const *b) {
@@ -701,8 +711,6 @@ void str_toupper(char* input) {
 }
 
 void get_category_str(char* output, int category_id) {
-//	char output[MAXLENGTH];
-
 	if(category_id == 1) {
 		sprintf(output, "Books and proceedings");
 	} else if(category_id == 2) {
@@ -718,6 +726,33 @@ void get_category_str(char* output, int category_id) {
 	} else if(category_id == 7) {
 		sprintf(output, "Miscellaneous");
 	}
+}
 
-//	return output;
+void flip_authors_names(char *flipped_names, const char *authors_names) {
+	char *tmpstr = malloc(MAXLENGTH*sizeof(char));
+	char *tmpLastname = malloc(MAXLENGTH*sizeof(char));
+
+	strcpy(tmpstr, authors_names);
+	flipped_names[0] = '\0';
+
+	char *token = strtok(tmpstr, ",");
+	while(token != NULL) {
+		strcpy(tmpLastname, token);
+
+		token = strtok(NULL, "., ");
+		while(token != NULL && strcmp(token, "and") != 0) {
+			strcat(flipped_names, token);
+			strcat(flipped_names, ". ");
+			token = strtok(NULL, ". ");
+		}
+
+		strcat(flipped_names, tmpLastname);
+		if(token != NULL) {
+			strcat(flipped_names, ", ");
+		}
+
+		token = strtok(NULL, ",");
+	}
+
+	free(tmpstr); free(tmpLastname);
 }

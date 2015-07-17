@@ -25,6 +25,7 @@ int compare_char( const void*, const void*);
 
 void str_toupper(char*);
 void get_category_str(char*, int);
+void flip_authors_names(char*, const char*);
 
 // parser.c
 int bib_parser(bibentry*, int, char*);

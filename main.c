@@ -563,14 +563,21 @@ void html_write_year_page(int year, int nb_entries, bibentry* bib_entries, char 
 }
 
 void html_write_entry(FILE* html_page, bibentry entry) {
-	// TODO manage author's and editors names
-	// Books and proceedings
+	// Author's and editors names: print initials then lastname
 	char *flipped_authors = malloc(MAXLENGTH*sizeof(char));
-	flip_authors_names(flipped_authors, entry.authors);
+	char *flipped_editors = malloc(MAXLENGTH*sizeof(char));
+
+	if(entry.authors != NULL) {
+		flip_authors_names(flipped_authors, entry.authors);
+	}
+	if(entry.editor != NULL) {
+		flip_authors_names(flipped_editors, entry.editor);
+	}
+
 	printf("%s\n", flipped_authors);
 
+	// Books and proceedings
 	if(entry.category == 1) {
-//		fprintf(html_page, "%s. <b>%s</b>", entry.authors, entry.title);
 		fprintf(html_page, "%s. <b>%s</b>", flipped_authors, entry.title);
 		if((entry.volume != 0) && (strcmp(entry.series, "") != 0)) {
 			fprintf(html_page, ", volume %d of <i>%s</i>", entry.volume, entry.series);
@@ -605,7 +612,6 @@ void html_write_entry(FILE* html_page, bibentry entry) {
 		}
 	// Thesis
 	} else if(entry.category == 2) {
-//		fprintf(html_page, "%s. <b>%s</b>. PhD. thesis, %s, ", entry.authors, entry.title, entry.school);
 		fprintf(html_page, "%s. <b>%s</b>. PhD. thesis, %s, ", flipped_authors, entry.title, entry.school);
 		if(strcmp(entry.note, "") != 0) {
 			fprintf(html_page, "%s, ", entry.note);
@@ -617,10 +623,9 @@ void html_write_entry(FILE* html_page, bibentry entry) {
 		}
 	// Articles in journal or book's chapters
 	} else if(entry.category == 3) {
-//		fprintf(html_page, "%s. <b>%s</b>. ", entry.authors, entry.title);
 		fprintf(html_page, "%s. <b>%s</b>. ", flipped_authors, entry.title);
-		if(strcmp(entry.editor, "") != 0) {
-			fprintf(html_page, "In %s, editors, <i>%s</i>, pages %s. %s, ", entry.editor, entry.booktitle, entry.pages, entry.publisher);
+		if(strcmp(flipped_editors, "") != 0) {
+			fprintf(html_page, "In %s, editors, <i>%s</i>, pages %s. %s, ", flipped_editors, entry.booktitle, entry.pages, entry.publisher);
 		} else {
 			fprintf(html_page, "<i>%s</i>, %d", entry.journal, entry.volume);
 			if(entry.number != 0) {
@@ -648,7 +653,6 @@ void html_write_entry(FILE* html_page, bibentry entry) {
 		}
 	// Conference articles
 	} else if(entry.category == 4) {
-//		fprintf(html_page, "%s. <b>%s</b>. In <i>%s</i>, ", entry.authors, entry.title, entry.booktitle);
 		fprintf(html_page, "%s. <b>%s</b>. In <i>%s</i>, ", flipped_authors, entry.title, entry.booktitle);
 		if(strcmp(entry.pages, "") != 0) {
 			fprintf(html_page, "pages %s, ", entry.pages);
@@ -675,84 +679,5 @@ void html_write_entry(FILE* html_page, bibentry entry) {
 		fprintf(html_page, "(UNDER WORK) %s, %d", entry.title, entry.year);
 	}
 
-	free(flipped_authors);
-}
-
-int compare_int_inc(void const *a, void const *b) {
-   int const *pa = a;
-   int const *pb = b;
-
-   return *pa - *pb;
-}
-
-int compare_int_dec(void const *a, void const *b) {
-   int const *pa = a;
-   int const *pb = b;
-
-   return *pb - *pa;
-}
-
-int compare_str(void const *a, void const *b) {
-    const char **ia = (const char **)a;
-    const char **ib = (const char **)b;
-    return strcmp(*ia, *ib);
-}
-
-int compare_char( const void *a, const void *b) {
-	return *(char*)a - *(char*)b;
-}
-
-void str_toupper(char* input) {
-	int i = 0;
-	while(input[i]) {
-		input[i] = toupper(input[i]);
-		i++;
-	}
-}
-
-void get_category_str(char* output, int category_id) {
-	if(category_id == 1) {
-		sprintf(output, "Books and proceedings");
-	} else if(category_id == 2) {
-		sprintf(output, "Thesis");
-	} else if(category_id == 3) {
-		sprintf(output, "Articles in journal or book's chapters");
-	} else if(category_id == 4) {
-		sprintf(output, "Conference articles");
-	} else if(category_id == 5) {
-		sprintf(output, "Internal reports");
-	} else if(category_id == 6) {
-		sprintf(output, "Manuals, booklets");
-	} else if(category_id == 7) {
-		sprintf(output, "Miscellaneous");
-	}
-}
-
-void flip_authors_names(char *flipped_names, const char *authors_names) {
-	char *tmpstr = malloc(MAXLENGTH*sizeof(char));
-	char *tmpLastname = malloc(MAXLENGTH*sizeof(char));
-
-	strcpy(tmpstr, authors_names);
-	flipped_names[0] = '\0';
-
-	char *token = strtok(tmpstr, ",");
-	while(token != NULL) {
-		strcpy(tmpLastname, token);
-
-		token = strtok(NULL, "., ");
-		while(token != NULL && strcmp(token, "and") != 0) {
-			strcat(flipped_names, token);
-			strcat(flipped_names, ". ");
-			token = strtok(NULL, ". ");
-		}
-
-		strcat(flipped_names, tmpLastname);
-		if(token != NULL) {
-			strcat(flipped_names, ", ");
-		}
-
-		token = strtok(NULL, ",");
-	}
-
-	free(tmpstr); free(tmpLastname);
+	free(flipped_authors); free(flipped_editors);
 }

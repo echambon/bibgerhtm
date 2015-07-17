@@ -18,6 +18,7 @@ void html_write_year_page(int, int, bibentry*, char*);
 void html_write(FILE*, char*);
 void html_write_entry(FILE*, bibentry);
 
+// misc.c
 int compare_int_inc(void const*, void const*);
 int compare_int_dec(void const*, void const*);
 int compare_str(void const*, void const*);
